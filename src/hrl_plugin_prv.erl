@@ -2,7 +2,7 @@
 -behaviour(provider).
 -export([init/1, do/1, format_error/1]).
 
--define(PROVIDER, hrl_plugin).
+-define(PROVIDER, echo).
 -define(DEPS, [{default, compile}]).
 
 %% ===================================================================
@@ -26,6 +26,7 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
+  io:format("Running hrl_plugin...", []),
     rebar_api:info("Running hrl_plugin...", []),
     {ok, State}.
 
