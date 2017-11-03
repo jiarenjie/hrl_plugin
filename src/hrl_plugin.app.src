@@ -1,5 +1,5 @@
 {application, hrl_plugin,
- [{description, "An OTP application"},
+ [{description, "A rebar plugin"},
   {vsn, "0.1.0"},
   {registered, []},
   {applications,
@@ -11,5 +11,5 @@
 
   {maintainers, []},
   {licenses, []},
-  {links, [{"Github", "https://github.com/jiarenjie/hrl_plugin/"}]}
+  {links, []}
  ]}.
