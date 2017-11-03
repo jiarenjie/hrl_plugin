@@ -27,7 +27,7 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
-  erlydtl:compile_file("/priv/templates/test.dtl",test_dtl),
+  erlydtl:compile_file("priv/templates/test.dtl",test_dtl),
   Option = [{tableName,<<"test">>},{fields,[<<"a">>,<<"b">>,<<"c">>]}],
   {ok,Result} = test_dtl:render(Option),
   file:write_file("src/include/test.hrl",Result),
