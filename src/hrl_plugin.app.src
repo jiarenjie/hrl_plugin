@@ -11,5 +11,5 @@
 
   {maintainers, []},
   {licenses, []},
-  {links, []}
+  {links, [{"Github", "https://github.com/jiarenjie/hrl_plugin/"}]}
  ]}.

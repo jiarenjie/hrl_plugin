@@ -37,7 +37,7 @@ init(State) ->
     {desc, "Compile erlydtl templates."},
     {opts, []}],
 
-  Provider = providers:create([Options]),
+  Provider = providers:create(Options),
   {ok, rebar_state:add_provider(State, Provider)}.
 
 %% Run the code for the plugin. The command line argument are parsed
