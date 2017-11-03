@@ -29,7 +29,7 @@ init(State) ->
 
   Options=[{name, ?PROVIDER},
     {module, ?MODULE},
-    {namespace, compile},
+    {namespace, hrl_plugin},
     {bare, false},
     {deps, ?DEPS},
     {example, "rebar3 erlydtl compile"},
