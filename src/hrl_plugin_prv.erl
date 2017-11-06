@@ -30,7 +30,7 @@ do(State) ->
 
   Options = [
     debug_info
-    ,{parse_trans, exprecs}
+    ,{parse_transform, exprecs}
 %%    ,{outdir,""}
   ],
   compile:file("src/repo/repo_mchants_pt",Options),
