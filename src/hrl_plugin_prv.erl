@@ -5,7 +5,7 @@
 -define(PROVIDER, echo).
 -define(DEPS, [{default, compile}]).
 
--define(OUTDIR,"/tmp").
+-define(OUTDIR,"_build/tmp/ebin").
 -define(REPODIR,"src/repo/").
 -define(INCLODEODIR,"src/include/").
 
@@ -32,13 +32,15 @@ init(State) ->
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
 
+  ok = file:make_dir(?OUTDIR),
+  true = code:add_path(?OUTDIR),
   Options = [
     debug_info
     ,{parse_transform, exprecs}
     ,{outdir,?OUTDIR}
   ],
 
-  compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
+  {ok,_} = compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
   [TableName] = repo_mchants_pt: '#exported_records-'(),
   Fields = repo_mchants_pt: '#info-'(TableName, fields),
   Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
@@ -47,6 +49,7 @@ do(State) ->
   {ok,Result} = hrl_dtl:render(Option),
 %%  file:write_file("src/include/test.hrl",Result),
   file:write_file( ?INCLODEODIR ++ "/store.hrl",Result),
+  true = code:del_path(?OUTDIR),
   rebar_api:info("Running hrl_plugin...end", []),
   {ok, State}.
 
