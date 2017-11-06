@@ -63,7 +63,7 @@ get_record(M)->
     ,{parse_transform, exprecs}
     ,{outdir,?OUTDIR}
   ],
-  {ok,_} = compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
+  {ok,_} = compile:file(?REPODIR ++ atom_to_list(M) ,Options),
   [TableName] = M: '#exported_records-'(),
   Fields = M: '#info-'(TableName, fields),
   Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
