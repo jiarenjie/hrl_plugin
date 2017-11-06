@@ -64,8 +64,8 @@ get_record(M)->
     ,{outdir,?OUTDIR}
   ],
   {ok,_} = compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
-  [TableName] = repo_mchants_pt: '#exported_records-'(),
-  Fields = repo_mchants_pt: '#info-'(TableName, fields),
+  [TableName] = M: '#exported_records-'(),
+  Fields = M: '#info-'(TableName, fields),
   Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
   Option = [{tableName,atom_to_binary(TableName,utf8)},{fields,Fields2}],
   {ok,Result} = repo_hrl_dtl:render(Option),
