@@ -27,8 +27,18 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
+
+  Options = [
+    debug_info
+    ,{parse_trans, exprecs}
+%%    ,{outdir,""}
+  ],
+  compile:file("src/repo/repo_mchants_pt",Options),
+  [TableName] = repo_mchants_pt: '#exported_records-'(),
+  Fields = repo_mchants_pt: '#info-'(TableName, fields),
+  Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
   erlydtl:compile_file("priv/templates/test.dtl",test_dtl),
-  Option = [{tableName,<<"test">>},{fields,[<<"a">>,<<"b">>,<<"c">>]}],
+  Option = [{tableName,atom_to_binary(TableName,utf8)},{fields,Fields2}],
   {ok,Result} = test_dtl:render(Option),
   file:write_file("src/include/test.hrl",Result),
   rebar_api:info("Running hrl_plugin...end", []),
