@@ -8,6 +8,13 @@
 -define(OUTDIR,"/tmp").
 -define(REPODIR,"src/repo/").
 -define(INCLODEODIR,"src/include/").
+-define(TABLELISTS,[
+  repo_mcht_txn_log_pt
+  , repo_up_txn_log_pt
+  ,repo_mchants_pt
+  ,repo_ums_reconcile_result_pt
+  ,repo_mcht_txn_acc_pt
+]).
 
 %% ===================================================================
 %% Public API
@@ -31,23 +38,11 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
-
+  erlydtl:compile_file("priv/templates/repo_hrl.dtl",repo_hrl_dtl),
   true = code:add_path(?OUTDIR),
-  Options = [
-    debug_info
-    ,{parse_transform, exprecs}
-    ,{outdir,?OUTDIR}
-  ],
-
-  {ok,_} = compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
-  [TableName] = repo_mchants_pt: '#exported_records-'(),
-  Fields = repo_mchants_pt: '#info-'(TableName, fields),
-  Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
-  erlydtl:compile_file("priv/templates/hrl.dtl",hrl_dtl),
-  Option = [{tableName,atom_to_binary(TableName,utf8)},{fields,Fields2}],
-  {ok,Result} = hrl_dtl:render(Option),
+  Result = create_new_repo_record(?TABLELISTS,[]),
 %%  file:write_file("src/include/test.hrl",Result),
-  file:write_file( ?INCLODEODIR ++ "/store.hrl",Result),
+  ok = file:write_file( ?INCLODEODIR ++ "/store_new.hrl",Result),
   true = code:del_path(?OUTDIR),
   rebar_api:info("Running hrl_plugin...end", []),
   {ok, State}.
@@ -55,3 +50,23 @@ do(State) ->
 -spec format_error(any()) -> iolist().
 format_error(Reason) ->
   io_lib:format("~p", [Reason]).
+
+create_new_repo_record([], Acc) ->
+  Acc;
+create_new_repo_record([Table|RestTable], Acc) ->
+  List = get_record(Table),
+  create_new_repo_record(RestTable,[List|Acc]).
+
+get_record(M)->
+  Options = [
+    debug_info
+    ,{parse_transform, exprecs}
+    ,{outdir,?OUTDIR}
+  ],
+  {ok,_} = compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
+  [TableName] = repo_mchants_pt: '#exported_records-'(),
+  Fields = repo_mchants_pt: '#info-'(TableName, fields),
+  Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
+  Option = [{tableName,atom_to_binary(TableName,utf8)},{fields,Fields2}],
+  {ok,Result} = repo_hrl_dtl:render(Option),
+  Result.
