@@ -5,7 +5,7 @@
 -define(PROVIDER, echo).
 -define(DEPS, [{default, compile}]).
 
--define(OUTDIR,"_build/tmp/ebin").
+-define(OUTDIR,"/tmp").
 -define(REPODIR,"src/repo/").
 -define(INCLODEODIR,"src/include/").
 
@@ -32,7 +32,6 @@ init(State) ->
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
 
-  ok = file:make_dir(?OUTDIR),
   true = code:add_path(?OUTDIR),
   Options = [
     debug_info
