@@ -5,6 +5,10 @@
 -define(PROVIDER, echo).
 -define(DEPS, [{default, compile}]).
 
+-define(OUTDIR,"/tmp").
+-define(REPODIR,"src/repo/").
+-define(INCLODEODIR,"src/include/").
+
 %% ===================================================================
 %% Public API
 %% ===================================================================
@@ -31,16 +35,18 @@ do(State) ->
   Options = [
     debug_info
     ,{parse_transform, exprecs}
-%%    ,{outdir,""}
+    ,{outdir,?OUTDIR}
   ],
-  compile:file("src/repo/repo_mchants_pt",Options),
+
+  compile:file(?REPODIR ++ atom_to_list(repo_mchants_pt) ,Options),
   [TableName] = repo_mchants_pt: '#exported_records-'(),
   Fields = repo_mchants_pt: '#info-'(TableName, fields),
   Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
-  erlydtl:compile_file("priv/templates/test.dtl",test_dtl),
+  erlydtl:compile_file("priv/templates/hrl.dtl",hrl_dtl),
   Option = [{tableName,atom_to_binary(TableName,utf8)},{fields,Fields2}],
-  {ok,Result} = test_dtl:render(Option),
-  file:write_file("src/include/test.hrl",Result),
+  {ok,Result} = hrl_dtl:render(Option),
+%%  file:write_file("src/include/test.hrl",Result),
+  file:write_file( ?INCLODEODIR ++ "/store.hrl",Result),
   rebar_api:info("Running hrl_plugin...end", []),
   {ok, State}.
 
