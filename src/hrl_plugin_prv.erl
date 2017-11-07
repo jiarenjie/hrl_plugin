@@ -43,6 +43,7 @@ do(State) ->
               true -> ?REPODIR;
               false -> ?DEPREPODIR
             end,
+  io:format("RepoDir:~p ~n",[RepoDir]),
   erlydtl:compile_file("priv/templates/repo_hrl.dtl", repo_hrl_dtl),
   true = code:add_path(?OUTDIR),
   Result = create_new_repo_record(?TABLELISTS,RepoDir, []),
@@ -68,6 +69,7 @@ get_record(M,RepoDir) ->
     , {parse_transform, exprecs}
     , {outdir, ?OUTDIR}
   ],
+  io:format("FileName:~p,filexit:~p ~n",[RepoDir ++ atom_to_list(M),filelib:is_regular(RepoDir ++ atom_to_list(M))]),
   {ok, _} = compile:file(RepoDir ++ atom_to_list(M), Options),
   [TableName] = M: '#exported_records-'(),
   Fields = M: '#info-'(TableName, fields),
