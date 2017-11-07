@@ -7,7 +7,7 @@
 
 -define(OUTDIR, "/tmp").
 -define(REPODIR, "src/repo/").
--define(DEPREPODIR, "_build/default/lib/pg_store/src/repos").
+-define(DEPREPODIR, "_build/default/lib/pg_store/src/repos/").
 -define(INCLODEODIR, "src/include/").
 -define(TABLELISTS, [
   repo_mcht_txn_log_pt
