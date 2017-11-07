@@ -5,18 +5,10 @@
 -define(PROVIDER, echo).
 -define(DEPS, [{default, compile}]).
 
--define(OUTDIR, "/tmp").
--define(REPODIR, "src/repo/").
--define(DEPREPODIR, "_build/default/lib/pg_store/src/repos/").
--define(INCLODEODIR, "src/include/").
--define(TABLELISTS, [
-  repo_mcht_txn_log_pt
-  , repo_up_txn_log_pt
-  , repo_mchants_pt
-  , repo_ums_reconcile_result_pt
-  , repo_mcht_txn_acc_pt
-]).
 
+-define(DOCROOT, "priv/templates/").
+-define(CONFIG, "priv/templates/hrl_plugin.config").
+-define(DTLNAME, "_build/default/plugins/hrl_plugin/priv/templates/repo_hrl.dtl").
 %% ===================================================================
 %% Public API
 %% ===================================================================
@@ -39,41 +31,63 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
-  RepoDir = case filelib:is_dir(?REPODIR) of
-              true -> ?REPODIR;
-              false -> ?DEPREPODIR
+
+  try
+    Lists = case filelib:is_regular(?CONFIG) of
+              true -> {ok, [PV]} = file:consult(?CONFIG),
+                PV;
+              _ ->
+                [
+                  {outDir, "/tmp"}
+                  , {repoDir, "src/repo/"}
+                  , {hrlFileName, "src/include/store_new.hrl"}
+                  , {repoName, [repo_mcht_txn_log_pt
+                  , repo_up_txn_log_pt
+                  , repo_mchants_pt
+                  , repo_ums_reconcile_result_pt
+                  , repo_mcht_txn_acc_pt]}
+                ]
             end,
-  io:format("RepoDir:~p ~n",[RepoDir]),
-  erlydtl:compile_file("priv/templates/repo_hrl.dtl", repo_hrl_dtl),
-  true = code:add_path(?OUTDIR),
-  Result = create_new_repo_record(?TABLELISTS,RepoDir, []),
+    RepoDir = proplists:get_value(includeDir, Lists, "src/repo/"),
+    OutDir = proplists:get_value(outDir, Lists, "/tmp"),
+    HrlFileName = proplists:get_value(hrlFileName, Lists, "src/include/store_new.hrl"),
+    RepoName = proplists:get_value(repoName, Lists, [repo_mcht_txn_log_pt
+      , repo_up_txn_log_pt
+      , repo_mchants_pt
+      , repo_ums_reconcile_result_pt
+      , repo_mcht_txn_acc_pt]),
+    io:format("RepoDir:~p ~n", [RepoDir]),
+    {ok,repo_hrl_dtl} = erlydtl:compile_file(?DTLNAME, repo_hrl_dtl),
+    true = code:add_path(OutDir),
+    Result = create_new_repo_record(RepoName, [RepoDir, OutDir], []),
 %%  file:write_file("src/include/test.hrl",Result),
-  case filelib:is_dir(?INCLODEODIR) of
-    true -> ok;
-    false -> file:make_dir(?INCLODEODIR)
-  end,
-  ok = file:write_file(?INCLODEODIR ++ "/store_new.hrl", Result),
-  true = code:del_path(?OUTDIR),
-  rebar_api:info("Running hrl_plugin...end", []),
+    ok = file:write_file(HrlFileName, Result),
+    true = code:del_path(OutDir),
+    rebar_api:info("Running hrl_plugin...end", [])
+  catch
+      _:_  ->
+        rebar_api:error("hrl_plugin creat ~p error ...", [HrlFileName])
+  end ,
+
   {ok, State}.
 
 -spec format_error(any()) -> iolist().
 format_error(Reason) ->
   io_lib:format("~p", [Reason]).
 
-create_new_repo_record([],RepoDir, Acc) ->
+create_new_repo_record([], _Option, Acc) ->
   Acc;
-create_new_repo_record([Table | RestTable],RepoDir, Acc) ->
-  List = get_record(Table,RepoDir),
-  create_new_repo_record(RestTable,RepoDir, [List | Acc]).
+create_new_repo_record([Table | RestTable], Option, Acc) ->
+  List = get_record(Table, Option),
+  create_new_repo_record(RestTable, Option, [List | Acc]).
 
-get_record(M,RepoDir) ->
+get_record(M, [RepoDir, OutDir]) ->
   Options = [
     debug_info
     , {parse_transform, exprecs}
-    , {outdir, ?OUTDIR}
+    , {outdir, OutDir}
   ],
-  io:format("FileName:~p,filexit:~p ~n",[RepoDir ++ atom_to_list(M),filelib:is_regular(RepoDir ++ atom_to_list(M))]),
+  io:format("FileName:~p,filexit:~p ~n", [RepoDir ++ atom_to_list(M), filelib:is_regular(RepoDir ++ atom_to_list(M))]),
   {ok, _} = compile:file(RepoDir ++ atom_to_list(M), Options),
   [TableName] = M: '#exported_records-'(),
   Fields = M: '#info-'(TableName, fields),
@@ -81,3 +95,5 @@ get_record(M,RepoDir) ->
   Option = [{tableName, atom_to_binary(TableName, utf8)}, {fields, Fields2}],
   {ok, Result} = repo_hrl_dtl:render(Option),
   Result.
+
+
