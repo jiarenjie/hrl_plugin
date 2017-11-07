@@ -5,15 +5,16 @@
 -define(PROVIDER, echo).
 -define(DEPS, [{default, compile}]).
 
--define(OUTDIR,"/tmp").
--define(REPODIR,"src/repo/").
--define(INCLODEODIR,"src/include/").
--define(TABLELISTS,[
+-define(OUTDIR, "/tmp").
+-define(REPODIR, "src/repo/").
+-define(DEPREPODIR, "src/repo/").
+-define(INCLODEODIR, "_build/default/lib/pg_store/src/repos").
+-define(TABLELISTS, [
   repo_mcht_txn_log_pt
   , repo_up_txn_log_pt
-  ,repo_mchants_pt
-  ,repo_ums_reconcile_result_pt
-  ,repo_mcht_txn_acc_pt
+  , repo_mchants_pt
+  , repo_ums_reconcile_result_pt
+  , repo_mcht_txn_acc_pt
 ]).
 
 %% ===================================================================
@@ -38,11 +39,15 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
-  erlydtl:compile_file("priv/templates/repo_hrl.dtl",repo_hrl_dtl),
+  RepoDir = case filelib:is_dir(?REPODIR) of
+              true -> ?REPODIR;
+              false -> ?DEPREPODIR
+            end,
+  erlydtl:compile_file("priv/templates/repo_hrl.dtl", repo_hrl_dtl),
   true = code:add_path(?OUTDIR),
-  Result = create_new_repo_record(?TABLELISTS,[]),
+  Result = create_new_repo_record(?TABLELISTS,RepoDir, []),
 %%  file:write_file("src/include/test.hrl",Result),
-  ok = file:write_file( ?INCLODEODIR ++ "/store_new.hrl",Result),
+  ok = file:write_file(?INCLODEODIR ++ "/store_new.hrl", Result),
   true = code:del_path(?OUTDIR),
   rebar_api:info("Running hrl_plugin...end", []),
   {ok, State}.
@@ -51,22 +56,22 @@ do(State) ->
 format_error(Reason) ->
   io_lib:format("~p", [Reason]).
 
-create_new_repo_record([], Acc) ->
+create_new_repo_record([],RepoDir, Acc) ->
   Acc;
-create_new_repo_record([Table|RestTable], Acc) ->
-  List = get_record(Table),
-  create_new_repo_record(RestTable,[List|Acc]).
+create_new_repo_record([Table | RestTable],RepoDir, Acc) ->
+  List = get_record(Table,RepoDir),
+  create_new_repo_record(RestTable,RepoDir, [List | Acc]).
 
-get_record(M)->
+get_record(M,RepoDir) ->
   Options = [
     debug_info
-    ,{parse_transform, exprecs}
-    ,{outdir,?OUTDIR}
+    , {parse_transform, exprecs}
+    , {outdir, ?OUTDIR}
   ],
-  {ok,_} = compile:file(?REPODIR ++ atom_to_list(M) ,Options),
+  {ok, _} = compile:file(RepoDir ++ atom_to_list(M), Options),
   [TableName] = M: '#exported_records-'(),
   Fields = M: '#info-'(TableName, fields),
-  Fields2 = lists:map(fun(X)-> atom_to_binary(X,utf8)  end,Fields),
-  Option = [{tableName,atom_to_binary(TableName,utf8)},{fields,Fields2}],
-  {ok,Result} = repo_hrl_dtl:render(Option),
+  Fields2 = lists:map(fun(X) -> atom_to_binary(X, utf8) end, Fields),
+  Option = [{tableName, atom_to_binary(TableName, utf8)}, {fields, Fields2}],
+  {ok, Result} = repo_hrl_dtl:render(Option),
   Result.
