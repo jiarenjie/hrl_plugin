@@ -7,8 +7,8 @@
 
 -define(OUTDIR, "/tmp").
 -define(REPODIR, "src/repo/").
--define(DEPREPODIR, "src/repo/").
--define(INCLODEODIR, "_build/default/lib/pg_store/src/repos").
+-define(DEPREPODIR, "_build/default/lib/pg_store/src/repos").
+-define(INCLODEODIR, "src/include/").
 -define(TABLELISTS, [
   repo_mcht_txn_log_pt
   , repo_up_txn_log_pt
@@ -48,6 +48,10 @@ do(State) ->
   true = code:add_path(?OUTDIR),
   Result = create_new_repo_record(?TABLELISTS,RepoDir, []),
 %%  file:write_file("src/include/test.hrl",Result),
+  case filelib:is_dir(?INCLODEODIR) of
+    true -> ok;
+    false -> file:make_dir(?INCLODEODIR)
+  end,
   ok = file:write_file(?INCLODEODIR ++ "/store_new.hrl", Result),
   true = code:del_path(?OUTDIR),
   rebar_api:info("Running hrl_plugin...end", []),
@@ -69,7 +73,7 @@ get_record(M,RepoDir) ->
     , {parse_transform, exprecs}
     , {outdir, ?OUTDIR}
   ],
-  io:format("FileName:~p,filexit:~p ~n",[RepoDir ++ atom_to_list(M),filelib:is_regular(RepoDir ++ atom_to_list(M))]),
+%%  io:format("FileName:~p,filexit:~p ~n",[RepoDir ++ atom_to_list(M),filelib:is_regular(RepoDir ++ atom_to_list(M))]),
   {ok, _} = compile:file(RepoDir ++ atom_to_list(M), Options),
   [TableName] = M: '#exported_records-'(),
   Fields = M: '#info-'(TableName, fields),
