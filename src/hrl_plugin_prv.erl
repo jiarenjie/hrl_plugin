@@ -31,44 +31,29 @@ init(State) ->
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
   rebar_api:info("Running hrl_plugin...", []),
-
-  try
-    Lists = case filelib:is_regular(?CONFIG) of
-              true -> {ok, [PV]} = file:consult(?CONFIG),
-                PV;
-              _ ->
-                [
-                  {outDir, "/tmp"}
-                  , {repoDir, "src/repo/"}
-                  , {hrlFileName, "src/include/store_new.hrl"}
-                  , {repoName, [repo_mcht_txn_log_pt
-                  , repo_up_txn_log_pt
-                  , repo_mchants_pt
-                  , repo_ums_reconcile_result_pt
-                  , repo_mcht_txn_acc_pt]}
-                ]
-            end,
-    RepoDir = proplists:get_value(includeDir, Lists, "src/repo/"),
-    OutDir = proplists:get_value(outDir, Lists, "/tmp"),
-    HrlFileName = proplists:get_value(hrlFileName, Lists, "src/include/store_new.hrl"),
-    RepoName = proplists:get_value(repoName, Lists, [repo_mcht_txn_log_pt
-      , repo_up_txn_log_pt
-      , repo_mchants_pt
-      , repo_ums_reconcile_result_pt
-      , repo_mcht_txn_acc_pt]),
-    io:format("RepoDir:~p ~n", [RepoDir]),
-    {ok,repo_hrl_dtl} = erlydtl:compile_file(?DTLNAME, repo_hrl_dtl),
-    true = code:add_path(OutDir),
-    Result = create_new_repo_record(RepoName, [RepoDir, OutDir], []),
+  Lists = case filelib:is_regular(?CONFIG) of
+            true -> {ok, [PV]} = file:consult(?CONFIG),
+              PV;
+            _ ->
+              [
+                {outDir, "/tmp"}
+                , {repoDir, "src/repo/"}
+                , {hrlFileName, "src/include/store_new.hrl"}
+                , {repoName, []}
+              ]
+          end,
+  RepoDir = proplists:get_value(includeDir, Lists, "src/repo/"),
+  OutDir = proplists:get_value(outDir, Lists, "/tmp"),
+  HrlFileName = proplists:get_value(hrlFileName, Lists, "src/include/store_new.hrl"),
+  RepoName = proplists:get_value(repoName, Lists, []),
+  io:format("RepoDir:~p ~n", [RepoDir]),
+  {ok, repo_hrl_dtl} = erlydtl:compile_file(?DTLNAME, repo_hrl_dtl),
+  true = code:add_path(OutDir),
+  Result = create_new_repo_record(RepoName, [RepoDir, OutDir], []),
 %%  file:write_file("src/include/test.hrl",Result),
-    ok = file:write_file(HrlFileName, Result),
-    true = code:del_path(OutDir),
-    rebar_api:info("Running hrl_plugin...end", [])
-  catch
-      _:_  ->
-        rebar_api:error("hrl_plugin creat ~p error ...", [HrlFileName])
-  end ,
-
+  file:write_file(HrlFileName, Result),
+  true = code:del_path(OutDir),
+  rebar_api:info("Running hrl_plugin...end", []),
   {ok, State}.
 
 -spec format_error(any()) -> iolist().
